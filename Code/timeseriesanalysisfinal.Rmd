@@ -1,0 +1,216 @@
+y---
+title: "detrendingdata"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(reshape)
+library(ggthemes)
+library(dplyr)
+library(zoo)
+library(ggplot2)
+library(forecast)
+library(mFilter)
+library(forecast)
+library(ggfortify)
+library(changepoint)
+```
+
+```{r}
+# daily flight data to reprensent national trends 
+dailyflights <- statedata %>%
+  group_by(date) %>%
+  summarize(flightscount = sum(flightscount)) # total number of domestic flights per day 
+dailyflights["rollingavg"] <- rollmean(dailyflights$flightscount, k = 7, fill = NA)
+dailyflights["scaled"] <- scale(dailyflights$flightscount)
+```
+
+```{r}
+# scale data for comparison
+statedata$scaled <- scale(statedata$flightscount)
+fl_all$scaled <- scale(fl_all$flightscount)
+id_all$scaled <- scale(id_all$flightscount)
+nj_all$scaled <- scale(nj_all$flightscount)
+ny_all$scaled <- scale(ny_all$flightscount)
+nm_all$scaled <- scale(nm_all$flightscount)
+tx_all$scaled <- scale(tx_all$flightscount)
+
+# vectors for each state
+statev = c(dailyflights$flightscount)
+flv= c(fl_all$scaled)
+idv= c(id_all$scaled)
+njv= c(nj_all$scaled)
+nyv= c(ny_all$scaled)
+nmv= c(nm_all$scaled)
+txv= c(tx_all$scaled)
+```
+
+```{r}
+# building time series 
+statets <- ts(statev, start = c(2020,03,01), end = c(2021, 07, 31), frequency = 517)
+flts <- ts(flv, start = c(2020,03,01), end = c(2021, 07, 31), frequency = 517)
+idts <- ts(idv, start = c(2020,03,01), end = c(2021, 07, 31), frequency = 517)
+njts <- ts(njv, start = c(2020,03,01), end = c(2021, 07, 31), frequency = 517)
+nyts <- ts(nyv, start = c(2020,03,01), end = c(2021, 07, 31), frequency = 517)
+nmts <- ts(nmv, start = c(2020,03,01), end = c(2021, 07, 31), frequency = 517)
+txts <- ts(txv, start = c(2020,03,01), end = c(2021, 07, 31), frequency = 517)
+```
+
+## DETRENDING 
+
+First, to detect the underlying trend, the time series is smoothed using a centered moving average. A moving window of 7 days represents weekly seasonality. 
+```{r}
+# STEP 1: DETECT THE TREND 
+
+trend_states = ma(statets, order=7, centre =T) 
+plot(as.ts(statets), ylab = "Flight Count", main = "Daily Flight Frequency Time Series") 
+lines(trend_states, col = "red") 
+legend(2020.77, 8000, legend = c("Smoothed Trend"), col = c("red"), lty = 1:1, cex = 0.8, box.lty = 0)
+```
+
+Next, removing the previously calculated trend from the time series will reveal seasonality 
+```{r}
+# STEP 2: DETREND THE TIME SERIES 
+
+detrend = statets / trend_states
+plot(as.ts(detrend), ylab = "Flight Count", main = "Detrended Time Series - All Flights")
+```
+
+From the detrended time series, the average seasonality is computed by adding the seasonality together and dividing by the seasonality period. To average together the time series it is fed into a matrix which is then transformed to contain elements of the same period (like day of week). Finally, the mean of each column in computed. 
+```{r}
+# STEP 3: AVERAGE THE SEASONALITY
+
+m_air = t(matrix(data = detrend, nrow = 74))
+seasonal_allflights = colMeans(m_air, na.rm = T)
+plot(as.ts(rep(seasonal_allflights,74)))
+```
+The multiplicative formula is Time Series = Seasonal * Trend * Random. Plotting the result will leave behind the random noise of the time series. 
+```{r}
+# STEP 4: EXAMINING REMAINING RANDOM NOISE 
+
+random_allflights = statets / (trend_allflights * seasonal_allflights)
+plot(as.ts(random_allflights))
+
+# detrending the individual states using national trends 
+random_fl = flts / (trend_allflights * seasonal_allflights)
+random_id = idts / (trend_allflights * seasonal_allflights)
+random_nj = njts / (trend_allflights * seasonal_allflights)
+random_nm = nmts / (trend_allflights * seasonal_allflights)
+random_ny = nyts / (trend_allflights * seasonal_allflights)
+random_tx = txts / (trend_allflights * seasonal_allflights)
+```
+
+```{r}
+# visualizing random noise for each state 
+plot(random_fl, main = "Florida Random Noise")
+plot(random_id, main = "Idaho Random Noise")
+plot(random_nj, main = "New Jersey Random Noise")
+plot(random_nm, main = "New Mexico Random Noise")
+plot(random_ny, main = "New York Random Noise")
+plot(random_tx, main = "Texas Random Noise")
+```
+
+A decomposition of the time series visualizes all of the above steps together. 
+```{r}
+ts_flights = ts(statets, frequency = 52)
+decompose_flights = decompose(ts_flights, "multiplicative")
+
+plot(as.ts(decompose_flights$seasonal))
+plot(as.ts(decompose_flights$trend))
+plot(as.ts(decompose_flights$random))
+plot(decompose_flights)
+```
+  
+# DETECTING CHANGE POINTS 
+```{r}
+# FLORIDA
+
+flcp <- cpt.var(na.omit(random_fl), method = "PELT")
+plot(flcp, type = "l", cpt.col = "red", xlab = "Index", cpt.width = 4, main = "Florida Changepoints")
+cpts(flcp) # output is the specific changepoints identified by the algorithm 
+
+fl_all %>%
+  select(date, flightscount) %>%
+  mutate(growth = 100 * ((flightscount / lag(flightscount)) - 1)) %>%
+  filter(date > "1960-01-01") %>%
+  slice(cpts(flcp))
+```
+
+```{r}
+# IDAHO
+
+idcp <- cpt.var(na.omit(random_id), method = "PELT")
+plot(idcp, type = "l", cpt.col = "red", xlab = "Index", cpt.width = 4, main = "Idaho Changepoints")
+cpts(idcp)
+
+id_all %>%
+  select(date, flightscount) %>%
+  mutate(growth = 100 * ((flightscount / lag(flightscount)) - 1)) %>%
+  filter(date > "1960-01-01") %>%
+  slice(cpts(idcp))
+```
+
+```{r}
+# NEW MEXICO
+
+nmcp <- cpt.var(na.omit(random_nm), method = "PELT")
+plot(nmcp, type = "l", cpt.col = "red", xlab = "Index", cpt.width = 4, main = "New Mexico Changepoints")
+cpts(nmcp)
+
+nm_all %>%
+  select(date, flightscount) %>%
+  mutate(growth = 100 * ((flightscount / lag(flightscount)) - 1)) %>%
+  filter(date > "1960-01-01") %>%
+  slice(cpts(nmcp))
+```
+
+```{r}
+# NEW YORK
+
+nycp <- cpt.var(na.omit(random_ny), method = "PELT")
+plot(nycp, type = "l", cpt.col = "red", xlab = "Index", cpt.width = 4, main = "New York Changepoints")
+cpts(nycp)
+
+ny_all %>%
+  select(date, flightscount) %>%
+  mutate(growth = 100 * ((flightscount / lag(flightscount)) - 1)) %>%
+  filter(date > "1960-01-01") %>%
+  slice(cpts(nycp))
+```
+
+```{r}
+# NEW JERSEY
+
+njcp <- cpt.var(na.omit(random_nj), method = "PELT")
+plot(njcp, type = "l", cpt.col = "red", xlab = "Index", cpt.width = 4, main = "New Jersey Changepoints")
+cpts(njcp)
+
+nj_all %>%
+  select(date, flightscount) %>%
+  mutate(growth = 100 * ((flightscount / lag(flightscount)) - 1)) %>%
+  filter(date > "1960-01-01") %>%
+  slice(cpts(njcp))
+```
+
+```{r}
+# TEXAS
+
+txcp <- cpt.var(na.omit(random_tx), method = "PELT")
+plot(txcp, type = "l", cpt.col = "red", xlab = "Index", cpt.width = 4, main = "Texas Changepoints")
+abline(v = as.Date("2020-03-26"))
+cpts(txcp)
+
+tx_all %>%
+  select(date, flightscount) %>%
+  mutate(growth = 100 * ((flightscount / lag(flightscount)) - 1)) %>%
+  filter(date > "1960-01-01") %>%
+  slice(cpts(txcp))
+```
+

@@ -1,0 +1,487 @@
+---
+title: "401project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE}
+#install.packages("tidyverse")
+#install.packages("readxl")
+#install.packages("reshape")
+#install.packages("ggthemes")
+#install.packages("zoo")
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(reshape)
+library(ggthemes)
+library(dplyr)
+library(zoo)
+```
+
+# Travel Restrictions Data 
+```{r}
+# importing travel restriction dates data 
+df <- read.csv("travelrestrictions.csv")
+names(df) <- c('State', 'StartDate', 'EndDate')
+df$datediff <- abs(as.numeric(as.Date(as.character(df$StartDate), format="%m/%d/%y") - as.Date(as.character(df$EndDate), format="%m/%d/%y"))) # calculating the length of restriction in days 
+
+dfmelt <- melt(df, id.vars = c("State", "datediff"), measure.vars = c("StartDate", "EndDate"))
+dfmelt$value <- as.Date(dfmelt$value, format = "%m/%d/%y")
+```
+
+```{r}
+# visualizing travel restrictions using a gantt plot 
+dfmelt %>%
+  ggplot(aes(value, State, group = State)) +
+  geom_point(aes(color = variable)) +
+  geom_line() +
+  scale_color_manual(values = c("darkolivegreen4","brown1")) +
+  labs(x = "Date", y = NULL, title = "Travel Restriction Timelines by State") +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none", 
+        plot.title = element_text(face="bold", hjust = 0.5),
+        plot.background = element_rect(fill = 'white')) +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "2 months")
+```
+
+# Daily Departures Data 
+```{r}
+# importing daily flight data, grouped by state 
+statedata <- read.csv("grouped_state3.csv", header = FALSE)
+colnames(statedata) <- c('state', 'date', 'flightscount')
+statedata$date <- as.Date(statedata$date)
+statedata <- statedata %>%
+  filter(state != "HI" & state != "KS") 
+```
+
+```{r}
+# making two data frames for each state, one with flights only during a restricted period and one with all flights
+# labeling dates for second df as "Pre-Restriction", "Restriction" and "Post-Restriction" 
+
+# ALASKA
+ak_restricted <- statedata %>%
+  filter(date >= "2020-03-11" & date <= "2021-02-14" & state == "AK")
+ak_all <- statedata %>%
+  filter(state == "AK")
+ak_all$restriction <- 
+  ifelse(ak_all$date >= "2020-03-11" & ak_all$date <= "2021-02-14", "Restriction", 
+         ifelse(ak_all$date <= "2020-03-11", "Pre-Restriction",
+                ifelse(ak_all$date >= "2021-02-14", "Post-Restriction","ERROR")))
+
+# ARIZONA
+az_restricted <- statedata %>%
+  filter(date >= "2020-04-07" & date <= "2020-05-12" & state == "AZ")
+az_all <- statedata %>%
+  filter(state == "AZ")
+az_all$restriction <- 
+  ifelse(az_all$date >= "2020-04-07" & az_all$date <= "2020-05-12", "Restriction", 
+         ifelse(az_all$date <= "2020-04-07", "Pre-Restriction",
+                ifelse(az_all$date >= "2020-05-12", "Post-Restriction","ERROR")))
+
+# ARKANSAS
+ar_restricted <- statedata %>%
+  filter(date >= "2020-05-14" & date <= "2021-06-15" & state == "AR")
+ar_all <- statedata %>%
+  filter(state == "AR")
+ar_all$restriction <- 
+  ifelse(ar_all$date >= "2020-05-14" & ar_all$date <= "2021-06-15", "Restriction", 
+         ifelse(ar_all$date <= "2020-05-14", "Pre-Restriction",
+                ifelse(ar_all$date >= "2021-06-15", "Post-Restriction","ERROR")))
+
+# CONNECTICUT
+ct_restricted <- statedata %>%
+  filter(date >= "2020-06-25" & date <= "2021-03-19" & state == "CT")
+ct_all <- statedata %>%
+  filter(state == "CT")
+ct_all$restriction <- 
+  ifelse(ct_all$date >= "2020-06-25" & ct_all$date <= "2021-03-19", "Restriction", 
+         ifelse(ct_all$date <= "2020-06-25", "Pre-Restriction",
+                ifelse(ct_all$date >= "2021-03-19", "Post-Restriction","ERROR")))
+
+# FLORIDA
+fl_restricted <- statedata %>%
+  filter(date >= "2020-03-24" & date <= "2020-08-06" & state == "FL")
+fl_all <- statedata %>%
+  filter(state == "FL")
+fl_all$restriction <- 
+  ifelse(fl_all$date >= "2020-03-24" & fl_all$date <= "2020-08-06", "Restriction", 
+         ifelse(fl_all$date <= "2020-03-24", "Pre-Restriction",
+                ifelse(fl_all$date >= "2020-08-06", "Post-Restriction","ERROR")))
+
+
+# IDAHO
+id_restricted <- statedata %>%
+  filter(date >= "2020-04-15" & date <= "2020-05-15" & state == "ID")
+id_all <- statedata %>%
+  filter(state == "ID")
+id_all$restriction <- 
+  ifelse(id_all$date >= "2020-04-15" & id_all$date <= "2020-05-15", "Restriction", 
+         ifelse(id_all$date <= "2020-04-15", "Pre-Restriction",
+                ifelse(id_all$date >= "2020-05-15", "Post-Restriction","ERROR")))
+
+# KENTUCKY
+ky_restricted <- statedata %>%
+  filter(date >= "2020-03-30" & date <= "2020-05-06" & state == "KY")
+ky_all <- statedata %>%
+  filter(state == "KY")
+ky_all$restriction <- 
+  ifelse(ky_all$date >= "2020-03-30" & ky_all$date <= "2020-05-06", "Restriction", 
+         ifelse(ky_all$date <= "2020-03-30", "Pre-Restriction",
+                ifelse(ky_all$date >= "2020-05-06", "Post-Restriction","ERROR")))
+
+# MAINE 
+me_restricted <- statedata %>%
+  filter(date >= "2020-04-03" & date <= "2020-05-01" & state == "ME")
+me_all <- statedata %>%
+  filter(state == "ME")
+me_all$restriction <- 
+  ifelse(me_all$date >= "2020-04-03" & me_all$date <= "2020-05-01", "Restriction", 
+         ifelse(me_all$date <= "2020-04-03", "Pre-Restriction",
+                ifelse(me_all$date >= "2020-05-01", "Post-Restriction","ERROR")))
+
+# MARYLAND
+md_restricted <- statedata %>%
+  filter(date >= "2020-12-17" & date <= "2021-03-12" & state == "MD")
+md_all <- statedata %>%
+  filter(state == "MD")
+md_all$restriction <- 
+  ifelse(md_all$date >= "2020-12-17" & md_all$date <= "2021-03-12", "Restriction", 
+         ifelse(md_all$date <= "2020-12-17", "Pre-Restriction",
+                ifelse(md_all$date >= "2021-03-12", "Post-Restriction","ERROR")))
+
+# MASSACHUSETTS
+ma_restricted <- statedata %>%
+  filter(date >= "2020-08-01" & date <= "2021-03-22" & state == "MA")
+ma_all <- statedata %>%
+  filter(state == "MA") 
+ma_all$restriction <- 
+  ifelse(ma_all$date >= "2020-08-01" & ma_all$date <= "2021-03-22", "Restriction", 
+         ifelse(ma_all$date <= "2021-03-22", "Pre-Restriction",
+                ifelse(ma_all$date >= "2020-08-01", "Post-Restriction","ERROR")))
+
+# MONTANA
+mt_restricted <- statedata %>%
+  filter(date >= "2020-03-30" & date <= "2020-06-01" & state == "MT")
+mt_all <- statedata %>%
+  filter(state == "MT") 
+mt_all$restriction <- 
+  ifelse(mt_all$date >= "2020-03-30" & mt_all$date <= "2020-06-01", "Restriction", 
+         ifelse(mt_all$date <= "2020-03-30", "Pre-Restriction",
+                ifelse(mt_all$date >= "2020-06-01", "Post-Restriction","ERROR")))
+
+# NEW JERSEY
+nj_restricted <- statedata %>%
+  filter(date >= "2020-06-25" & date <= "2021-05-17" & state == "NJ")
+nj_all <- statedata %>%
+  filter(state == "NJ") 
+nj_all$restriction <- 
+  ifelse(nj_all$date >= "2020-06-25" & nj_all$date <= "2021-05-17", "Restriction", 
+         ifelse(nj_all$date <= "2020-06-25", "Pre-Restriction",
+                ifelse(nj_all$date >= "2021-05-17", "Post-Restriction","ERROR")))
+
+# NEW MEXICO 
+nm_restricted <- statedata %>%
+  filter(date >= "2020-03-27" & date <= "2021-02-11" & state == "NM")
+nm_all <- statedata %>%
+  filter(state == "NM") 
+nm_all$restriction <- 
+  ifelse(nm_all$date >= "2020-03-27" & nm_all$date <= "2021-02-11", "Restriction", 
+         ifelse(nm_all$date <= "2020-03-27", "Pre-Restriction",
+                ifelse(nm_all$date >= "2021-02-11", "Post-Restriction","ERROR")))
+
+# NEW YORK
+ny_restricted <- statedata %>%
+  filter(date >= "2020-06-25" & date <= "2021-04-21" & state == "NY")
+ny_all <- statedata %>%
+  filter(state == "NY")
+ny_all$restriction <- 
+  ifelse(ny_all$date >= "2020-06-25" & ny_all$date <= "2021-04-21", "Restriction", 
+         ifelse(ny_all$date <= "2020-06-25", "Pre-Restriction",
+                ifelse(ny_all$date >= "2021-04-21", "Post-Restriction","ERROR")))
+
+# NORTH DAKOTA
+nd_restricted <- statedata %>%
+  filter(date >= "2020-03-28" & date <= "2020-05-08" & state == "ND")
+nd_all <- statedata %>%
+  filter(state == "ND")
+nd_all$restriction <- 
+  ifelse(nd_all$date >= "2020-03-28" & nd_all$date <= "2020-05-08", "Restriction", 
+         ifelse(nd_all$date <= "2020-03-28", "Pre-Restriction",
+                ifelse(nd_all$date >= "2020-05-08", "Post-Restriction","ERROR")))
+
+# OKLAHOMA
+ok_restricted <- statedata %>%
+  filter(date >= "2020-03-29" & date <= "2020-05-11" & state == "OK")
+ok_all <- statedata %>%
+  filter(state == "OK")
+ok_all$restriction <- 
+  ifelse(ok_all$date >= "2020-03-29" & ok_all$date <= "2020-05-11", "Restriction", 
+         ifelse(ok_all$date <= "2020-03-29", "Pre-Restriction",
+                ifelse(ok_all$date >= "2020-05-11", "Post-Restriction","ERROR")))
+
+# PENNSYLVANIA
+pa_restricted <- statedata %>%
+  filter(date >= "2020-11-20" & date <= "2021-03-01" & state == "PA")
+pa_all <- statedata %>%
+  filter(state == "PA")
+pa_all$restriction <- 
+  ifelse(pa_all$date >= "2020-11-20" & pa_all$date <= "2021-03-01", "Restriction", 
+         ifelse(pa_all$date <= "2020-11-20", "Pre-Restriction",
+                ifelse(pa_all$date >= "2021-03-01", "Post-Restriction","ERROR")))
+
+# RHODE ISLAND
+ri_restricted <- statedata %>%
+  filter(date >= "2020-03-28" & date <= "2021-07-06" & state == "RI")
+ri_all <- statedata %>%
+  filter(state == "RI")
+ri_all$restriction <- 
+  ifelse(ri_all$date >= "2020-03-28" & ri_all$date <= "2021-07-06", "Restriction", 
+         ifelse(ri_all$date <= "2020-03-28", "Pre-Restriction",
+                ifelse(ri_all$date >= "2021-07-06", "Post-Restriction","ERROR")))
+
+# SOUTH CAROLINA
+sc_restricted <- statedata %>%
+  filter(date >= "2020-03-27" & date <= "2020-05-01" & state == "SC")
+sc_all <- statedata %>%
+  filter(state == "SC")
+sc_all$restriction <- 
+  ifelse(sc_all$date >= "2020-03-27" & sc_all$date <= "2020-05-01", "Restriction", 
+         ifelse(sc_all$date <= "2020-03-27", "Pre-Restriction",
+                ifelse(sc_all$date >= "2020-05-01", "Post-Restriction","ERROR")))
+
+# TEXAS
+tx_restricted <- statedata %>%
+  filter(date >= "2020-03-26" & date <= "2020-05-21" & state == "TX")
+tx_all <- statedata %>%
+  filter(state == "TX")
+tx_all$restriction <- 
+  ifelse(tx_all$date >= "2020-03-26" & tx_all$date <= "2020-05-21", "Restriction", 
+         ifelse(tx_all$date <= "2020-03-26", "Pre-Restriction",
+                ifelse(tx_all$date >= "2020-05-21", "Post-Restriction","ERROR")))
+
+# UTAH
+ut_restricted <- statedata %>%
+  filter(date >= "2020-04-20" & date <= "2020-06-30" & state == "UT")
+ut_all <- statedata %>%
+  filter(state == "UT")
+ut_all$restriction <- 
+  ifelse(ut_all$date >= "2020-04-20" & ut_all$date <= "2020-06-30", "Restriction", 
+         ifelse(ut_all$date <= "2020-04-20", "Pre-Restriction",
+                ifelse(ut_all$date >= "2020-06-30", "Post-Restriction","ERROR")))
+
+# VERMONT
+vt_restricted <- statedata %>%
+  filter(date >= "2020-03-30" & date <= "2020-05-14" & state == "VT")
+vt_all <- statedata %>%
+  filter(state == "VT")
+vt_all$restriction <- 
+  ifelse(vt_all$date >= "2020-03-30" & vt_all$date <= "2020-05-14", "Restriction", 
+         ifelse(vt_all$date <= "2020-03-30", "Pre-Restriction",
+                ifelse(vt_all$date >= "2020-05-14", "Post-Restriction","ERROR")))
+
+# WEST VIRGINIA
+wv_restricted <- statedata %>%
+  filter(date >= "2020-03-31" & date <= "2020-05-21" & state == "WV")
+wv_all <- statedata %>%
+  filter(state == "WV")
+wv_all$restriction <- 
+  ifelse(wv_all$date >= "2020-03-31" & wv_all$date <= "2020-05-21", "Restriction", 
+         ifelse(wv_all$date <= "2020-03-31", "Pre-Restriction",
+                ifelse(wv_all$date >= "2020-05-21", "Post-Restriction","ERROR")))
+
+# WYOMING
+wy_restricted <- statedata %>%
+  filter(date >= "2020-04-03" & date <= "2020-05-07" & state == "WY")
+wy_all <- statedata %>%
+  filter(state == "WY")
+wy_all$restriction <- 
+  ifelse(wy_all$date >= "2020-04-03" & wy_all$date <= "2020-05-07", "Restriction", 
+         ifelse(wy_all$date <= "2020-04-03", "Pre-Restriction",
+                ifelse(wy_all$date >= "2020-05-07", "Post-Restriction","ERROR")))
+```
+
+```{r}
+# data frames with flights from states who issued restrictions (yesrestrictions) and those who did not (norestrictions)
+
+yesrestrictions <- statedata %>%
+  filter(state == "AK" | state == "AZ" | state == "AR" | state == "CT" | state == "DE" | state == "FL" |
+            state == "ID" | state == "KY" | state == "ME" | state == "MD" | state == "MA" | state == "MT" |
+            state == "NJ" | state == "NM" | state == "NY" | state == "ND" | state == "OK" | state == "PA" |
+            state == "RI" | state == "SC" | state == "TX" | state == "UT" | state == "VT" | state == "WV" |
+            state == "WY")
+
+norestrictions <- statedata %>%
+  filter(state != "AK" & state != "AZ" & state != "AR" & state != "CT" & state != "DE" & state != "FL"
+         & state != "ID" & state != "KY" & state != "ME" & state != "MD" & state != "MA" & state != "MT"
+         & state != "NJ" & state != "NM" & state != "NY" & state != "ND" & state != "OK" & state != "PA"
+         & state != "RI" & state != "SC" & state != "TX" & state != "UT" & state != "VT" & state != "WV"
+         & state != "WY")
+```
+
+```{r}
+# calculating the total flight count per date for each df 
+yesrestrictions <- yesrestrictions %>%
+  group_by(date) %>%
+  summarize(flightscount = sum(flightscount))
+norestrictions <- norestrictions %>%
+  group_by(date) %>%
+  summarize(flightscount = sum(flightscount))
+```
+
+```{r}
+# plotting both df with the start dates of every travel restriction 
+
+yes_vs_no <- ggplot() +
+  stat_summary(fun = sum, na.rm = TRUE, group = 3, geom ='line', 
+               aes(x = yesrestrictions$date, y = rollmean(scale(yesrestrictions$flightscount), k = 7, fill = NA), color = "With restrictions"), size = .9, alpha = 0.7) +
+  stat_summary(fun = sum, na.rm = TRUE, group = 3, geom ='line', 
+               aes(x = norestrictions$date, y = rollmean(scale(norestrictions$flightscount), k = 7, fill = NA), color = "No restrictions"), size = .9, alpha = 0.7) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-11")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-17")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-18")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-24")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-26")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-27")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-29")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-30")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-22")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-31")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-03")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-07")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-08")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-15")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-05-14")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-06-25")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-08-01")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-11-20")), col = "orange2", linetype = "dashed") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-12-17")), col = "orange2", linetype = "dashed") +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "2 months") +
+  labs(x = "Date", y = "Flight Frequency (scaled)", title = "Daily Flights") +
+  theme(plot.title = element_text(hjust = 0.5), legend.title = element_blank()) +
+  scale_color_manual(values = c("navy", "darkred"))
+
+yes_vs_no
+```
+```{r}
+dailyflights$date <- as.Date(as.numeric(dailyflights$date))
+```
+
+```{r}
+# comparing individual to national trends for each of the 6 states 
+
+# FLORIDA 
+ggplot() +
+  geom_line(data = dailyflights, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "National"), size = 0.8) +
+  geom_line(data = fl_all, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "Florida"), size = .8, alpha = .8) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-24")), col = "red") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-08-06")), col = "red") +
+  labs(x = "Date", y = "Daily Flights (Scaled)", title = "Florida Flight Frequency") +
+  theme(plot.title = element_text(hjust = 0.5), legend.title = element_blank()) +
+  scale_color_manual(values = c("darkgreen", "darkgrey")) +
+ scale_x_date(date_labels = "%b/%y", date_breaks = "2 months") 
+
+# IDAHO
+ggplot() +
+  geom_line(data = dailyflights, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "National"), size = 0.8) +
+  geom_line(data = id_all, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "Idaho"), size = .8, alpha = .8) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-15")), col = "red") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-05-15")), col = "red") +
+  labs(x = "Date", y = "Daily Flights (Scaled)", title = "Idaho Flight Frequency") +
+  theme(plot.title = element_text(hjust = 0.5), legend.title = element_blank()) +
+  scale_color_manual(values = c("darkgreen", "darkgrey")) +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "2 months") 
+
+# NEW JERSEY 
+ggplot() +
+  geom_line(data = dailyflights, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "National"), size = 0.8) +
+  geom_line(data = nj_all, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "New Jersey"), size = .8, alpha = .8) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-06-25")), col = "red") +
+  geom_vline(xintercept = as.numeric(as.Date("2021-05-17")), col = "red") +
+  labs(x = "Date", y = "Daily Flights (Scaled)", title = "New Jersey Flight Frequency") +
+  theme(plot.title = element_text(hjust = 0.5), legend.title = element_blank()) +
+  scale_color_manual(values = c("darkgrey", "darkgreen")) +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "2 months") 
+
+# NEW MEXICO
+ggplot() +
+  geom_line(data = dailyflights, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "National"), size = 0.8) +
+  geom_line(data = nm_all, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "New Mexico"), size = .8, alpha = .8) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-27")), col = "red") +
+  geom_vline(xintercept = as.numeric(as.Date("2021-02-11")), col = "red") +
+  labs(x = "Date", y = "Daily Flights (Scaled)", title = "New Mexico Flight Frequency") +
+  theme(plot.title = element_text(hjust = 0.5), legend.title = element_blank()) +
+  scale_color_manual(values = c("darkgrey", "darkgreen")) +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "2 months") 
+
+ggplot() +
+  geom_line(data = dailyflights, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "National"), size = 0.8) +
+  geom_line(data = ny_all, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "New York"), size = .8, alpha = .8) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-06-25")), col = "red") +
+  geom_vline(xintercept = as.numeric(as.Date("2021-04-01")), col = "red") +
+  labs(x = "Date", y = "Daily Flights (Scaled)", title = "New York Flight Frequency") +
+  theme(plot.title = element_text(hjust = 0.5), legend.title = element_blank()) +
+  scale_color_manual(values = c("darkgrey", "darkgreen")) +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "2 months") 
+
+# TEXAS
+ggplot() +
+  geom_line(data = dailyflights, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "National"), size = 0.8) +
+  geom_line(data = tx_all, 
+            aes(x=date, y=rollmean(scale(flightscount), k = 7, fill = NA), color = "Texas"), size = .8, alpha = .8) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-26")), col = "red") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-05-21")), col = "red") +
+  labs(x = "Date", y = "Daily Flights (Scaled)", title = "Texas Flight Frequency") +
+  theme(plot.title = element_text(hjust = 0.5), legend.title = element_blank()) +
+  scale_color_manual(values = c("darkgrey", "darkgreen")) +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "2 months") 
+```
+
+```{r}
+covid <- read.csv("COVID19DeathCounts.csv") 
+covid$Week.Ending.Date <- as.Date(covid$Week.Ending.Date, format = "%m/%d/%Y")
+
+covid <- covid %>%
+  filter(Week.Ending.Date >= "2020-03-01" & Week.Ending.Date <= "2021-07-31" & 
+           State == "United States" & Group == "By Week") %>%
+  group_by(Week.Ending.Date)
+
+covid2 = subset(covid, select = c("End.Date", "COVID.19.Deaths", "Total.Deaths"))
+names(covid2) <- c('date', 'COVID', 'totaldeaths')
+covid2$date <- as.Date(covid2$date, format = "%m/%d/%Y")
+```
+```{r}
+statedata$date <- as.Date(statedata$date, format = "%Y-%m-%d")
+ff <- statedata %>%
+  group_by(date) %>%
+  summarize(flightscount = sum(flightscount))
+```
+
+
+```{r}
+ggplot() +
+  geom_line(aes(x=ff$date, y=rollmean(scale(ff$flightscount), k=7, fill=NA), color = "National Flight Frequency"), size=1.5) +
+  geom_line(aes(x=covid2$date, y = scale(covid2$COVID), color = "COVID-19 Deaths"), size = 1.5) + 
+  scale_x_date(date_labels = "%b/%y", date_breaks = "2 months") +
+  labs(x = "Date", y = "Count (scaled)", title = "Weekly Flights vs COVID-19 Deaths") +
+  theme(plot.title = element_text(hjust = 0.5), legend.title = element_blank()) +
+  scale_color_manual(values = c("darkred", "darkgreen"))
+```

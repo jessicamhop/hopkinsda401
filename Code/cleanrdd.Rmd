@@ -1,0 +1,316 @@
+---
+title: "cleanrdd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r message=FALSE}
+#remotes::install_github("ianmoran11/mmtable2")
+#webshot::install_phantomjs()
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(reshape)
+library(ggthemes)
+library(dplyr)
+library(zoo)
+library(magrittr)
+library(rdd)
+library(mmtable2)
+library(gt)
+```
+
+# Running the RDD on each state 
+```{r}
+# ALASKA
+ak_all$date = as.numeric(ak_all$date)
+ak_lm30q <- ak_all %>%
+  filter(date >= 18302 & date <= 18362) %>%
+  mutate(threshold = ifelse(date >= 18332, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18332) + I((date-18332)^2) + threshold:I(date-18332) + threshold:I((date-18332)^2))
+
+summary(ak_lm30q)
+```
+
+```{r}
+# ARIZONA
+az_all$date = as.numeric(az_all$date)
+az_lm30q <- az_all %>%
+  filter(date >= 18329 & date <= 18389) %>%
+  mutate(threshold = ifelse(date >= 18359, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18359) + I((date-18359)^2) + threshold:I(date-18359) + threshold:I((date-18359)^2))
+
+#summary(az_lm30q)
+```
+
+```{r}
+# visualizing the data
+ggplot(az_all, aes(x=date, y = flightscount, color = restriction)) +
+  geom_point() +
+  stat_smooth(method = loess) +
+  labs(title = "Arizona")
+```
+
+
+```{r}
+# ARKANSAS
+ar_all$date = as.numeric(ar_all$date)
+ar_lm30q <- ar_all %>%
+  filter(date >= 18369 & date <= 18426) %>%
+  mutate(threshold = ifelse(date >= 18396, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18396) + I((date-18396)^2) + threshold:I(date-18396) + threshold:I((date-18396)^2))
+
+#summary(ar_lm30q)
+```
+
+```{r}
+# CONNECTICUT
+ct_all$date = as.numeric(ct_all$date)
+ct_lm30q <- ct_all %>%
+  filter(date >= 18408 & date <= 18498) %>%
+  mutate(threshold = ifelse(date >= 18438, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18438) + I((date-18438)^2) + threshold:I(date-18438) + threshold:I((date-18438)^2))
+
+#summary(ct_lm30q)
+```
+
+```{r}
+# FLORIDA
+fl_all$date = as.numeric(fl_all$date)
+fl_lm30q <- fl_all %>%
+  filter(date >= 18315 & date <= 18375) %>%
+  mutate(threshold = ifelse(date >= 18345, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18345) + I((date-18345)^2) + threshold:I(date-18345) + threshold:I((date-18345)^2))
+
+#summary(fl_lm30q)
+```
+
+```{r}
+# IDAHO
+id_all$date = as.numeric(id_all$date)
+id_lm30q <- id_all %>%
+  filter(date >= 18337 & date <= 18397) %>%
+  mutate(threshold = ifelse(date >= 18367, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18367) + I((date-18367)^2) + threshold:I(date-18367) + threshold:I((date-18367)^2))
+
+#summary(id_lm30q)
+```
+
+```{r}
+# KENTUCKY
+ky_all$date = as.numeric(ky_all$date)
+ky_lm30q <- ky_all %>%
+  filter(date >= 18321 & date <= 18381) %>%
+  mutate(threshold = ifelse(date >= 18351, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18351) + I((date-18351)^2) + threshold:I(date-18351) + threshold:I((date-18351)^2))
+
+#summary(ky_lm30q)
+```
+
+```{r}
+# MAINE
+me_all$date = as.numeric(me_all$date)
+me_lm30q <- me_all %>%
+  filter(date >= 18325 & date <= 18385) %>%
+  mutate(threshold = ifelse(date >= 18355, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18355) + I((date-18355)^2) + threshold:I(date-18355) + threshold:I((date-18355)^2))
+
+#summary(me_lm30q)
+```
+
+```{r}
+# MARYLAND
+md_all$date = as.numeric(md_all$date)
+md_lm30q <- md_all %>%
+  filter(date >= 18583 & date <= 18643) %>%
+  mutate(threshold = ifelse(date >= 18613, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18613) + I((date-18613)^2) + threshold:I(date-18613) + threshold:I((date-18613)^2))
+
+#summary(md_lm30q)
+```
+
+```{r}
+# MASSACHUSETTS
+ma_all$date = as.numeric(ma_all$date)
+ma_lm30q <- ma_all %>%
+  filter(date >= 18445 & date <= 18505) %>%
+  mutate(threshold = ifelse(date >= 18475, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18475) + I((date-18475)^2) + threshold:I(date-18475) + threshold:I((date-18475)^2))
+
+#summary(ma_lm30) 
+```
+
+```{r}
+# MONTANA
+mt_all$date = as.numeric(mt_all$date)
+mt_lm30q <- mt_all %>%
+  filter(date >= 18321 & date <= 18381) %>%
+  mutate(threshold = ifelse(date >= 18351, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18351) + I((date-18351)^2) + threshold:I(date-18351) + threshold:I((date-18351)^2))
+
+#summary(mt_lm30q) 
+```
+
+```{r}
+# NEW JERSEY 
+nj_all$date = as.numeric(nj_all$date)
+nj_lm30q <- nj_all %>%
+  filter(date >= 18408 & date <= 18468) %>%
+  mutate(threshold = ifelse(date >= 18438, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18438) + I((date-18438)^2) + threshold:I(date-18438) + threshold:I((date-18438)^2))
+
+#summary(nj_lm30q) 
+```
+
+```{r}
+# NEW MEXICO
+nm_all$date = as.numeric(nm_all$date)
+nm_lm30q <- nm_all %>%
+  filter(date >= 18318 & date <= 18378) %>%
+  mutate(threshold = ifelse(date >= 18348, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18348) + I((date-18348)^2) + threshold:I(date-18348) + threshold:I((date-18348)^2))
+
+#summary(nm_lm30q)
+```
+
+```{r}
+# NEW YORK 
+ny_all$date = as.numeric(ny_all$date)
+ny_lm30q <- ny_all %>%
+  filter(date >= 18408 & date <= 18468) %>%
+  mutate(threshold = ifelse(date >= 18438, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18438) + I((date-18438)^2) + threshold:I(date-18438) + threshold:I((date-18438)^2))
+
+#summary(ny_lm30q)
+```
+
+```{r}
+# NORTH DAKOTA
+nd_all$date = as.numeric(nd_all$date)
+nd_lm30q <- nd_all %>%
+  filter(date >= 18319 & date <= 18379) %>%
+  mutate(threshold = ifelse(date >= 18349, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18349) + I((date-18349)^2) + threshold:I(date-18349) + threshold:I((date-18349)^2))
+
+#summary(nd_lm30q)
+```
+
+```{r}
+# OKLAHOMA 
+ok_all$date = as.numeric(ok_all$date)
+ok_lm30q <- ok_all %>%
+  filter(date >= 18320 & date <= 18380) %>%
+  mutate(threshold = ifelse(date >= 18350, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18350) + I((date-18350)^2) + threshold:I(date-18350) + threshold:I((date-18350)^2))
+
+#summary(ok_lm30q)
+```
+
+```{r}
+# PENNSYLVANIA
+pa_all$date = as.numeric(pa_all$date)
+pa_lm30q <- pa_all %>%
+  filter(date >= 18556 & date <= 18616) %>%
+  mutate(threshold = ifelse(date >= 18586, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18586) + I((date-18586)^2) + threshold:I(date-18586) + threshold:I((date-18586)^2))
+
+#summary(pa_lm30q)
+```
+
+```{r}
+# RHODE ISLAND
+ri_all$date = as.numeric(ri_all$date)
+ri_lm30q <- ri_all %>%
+  filter(date >= 18319 & date <= 18379) %>%
+  mutate(threshold = ifelse(date >= 18349, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18349) + I((date-18349)^2) + threshold:I(date-18349) + threshold:I((date-18349)^2))
+
+#summary(ri_lm30q)
+```
+
+```{r}
+# SOUTH CAROLINA 
+sc_all$date = as.numeric(sc_all$date)
+sc_lm30q <- sc_all %>%
+  filter(date >= 18318 & date <= 18378) %>%
+  mutate(threshold = ifelse(date >= 18348, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18348) + I((date-18348)^2) + threshold:I(date-18348) + threshold:I((date-18348)^2))
+
+#summary(sc_lm30q)
+```
+
+```{r}
+# TEXAS
+tx_all$date = as.numeric(tx_all$date)
+tx_lm30q <- tx_all %>%
+  filter(date >= 18317 & date <= 18377) %>%
+  mutate(threshold = ifelse(date >= 18347, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18347) + I((date-18347)^2) + threshold:I(date-18347) + threshold:I((date-18347)^2))
+
+#summary(tx_lm30q)
+```
+
+```{r}
+# UTAH
+ut_all$date = as.numeric(ut_all$date)
+ut_lm30q <- ut_all %>%
+  filter(date >= 18330 & date <= 18390) %>%
+  mutate(threshold = ifelse(date >= 18360, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18360) + I((date-18360)^2) + threshold:I(date-18360) + threshold:I((date-18360)^2))
+
+#summary(ut_lm30q)
+```
+
+```{r}
+# VERMONT 
+vt_all$date = as.numeric(vt_all$date)
+vt_lm30q <- vt_all %>%
+  filter(date >= 18321 & date <= 18381) %>%
+  mutate(threshold = ifelse(date >= 18351, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18351) + I((date-18351)^2) + threshold:I(date-18351) + threshold:I((date-18351)^2))
+
+#summary(vt_lm30q)
+```
+
+```{r}
+# WEST VIRGINIA
+wv_all$date = as.numeric(wv_all$date)
+wv_lm30q <- wv_all %>%
+  filter(date >= 18322 & date <= 18382) %>%
+  mutate(threshold = ifelse(date >= 18352, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18352) + I((date-18352)^2) + threshold:I(date-18352) + threshold:I((date-18352)^2))
+
+#summary(wv_lm30q)
+```
+
+```{r}
+# WYOMING 
+wy_all$date = as.numeric(wy_all$date)
+wy_lm30q <- wy_all %>%
+  filter(date >= 18325 & date <= 18385) %>%
+  mutate(threshold = ifelse(date >= 18355, 1, 0)) %$%
+  lm(flightscount ~ threshold + I(date-18355) + I((date-18355)^2) + threshold:I(date-18355) + threshold:I((date-18355)^2))
+
+#summary(wy_lm30q)
+```
+
+```{r}
+rdd <- read_xlsx("rddresults.xlsx") # results of rdd analysis for each state
+```
+
+```{r}
+# table of results 
+table1 <- rdd %>%
+  gt(groupname_col = "Effective") %>%
+  tab_header(title = "RDD Model Results") %>%
+  row_group_order(groups = c("Effective", "Not effective")) %>%
+  fmt_scientific(columns = vars("p-value")) %>%
+  tab_options(row_group.border.bottom.width = 3,
+              row_group.border.top.width = 3,
+              heading.background.color = "gray97")
+
+gtsave(table1,"rddresultstable.png")
+```
